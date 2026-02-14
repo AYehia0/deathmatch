@@ -139,6 +139,3 @@ func (ws *WelcomeScreen) Render() string {
 
 	return output.String()
 }
-
-func init() {
-}

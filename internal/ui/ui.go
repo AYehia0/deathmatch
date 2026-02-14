@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/ahmedyahia/deathmatch/internal/game"
-	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/bubbles/viewport"
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/glamour"
 	"github.com/charmbracelet/lipgloss"
 )
@@ -238,7 +238,7 @@ Use **arrow keys** or **hjkl** (vim keys) to move:
 func (m Model) renderHelp() string {
 	tabs := []string{"How to Play [h]", "Controls [c]", "Scoring [s]"}
 	var tabsRendered []string
-	
+
 	for i, tab := range tabs {
 		style := lipgloss.NewStyle().Padding(0, 2)
 		if helpTab(i) == m.activeTab {
@@ -248,29 +248,18 @@ func (m Model) renderHelp() string {
 		}
 		tabsRendered = append(tabsRendered, style.Render(tab))
 	}
-	
+
 	header := lipgloss.JoinHorizontal(lipgloss.Top, tabsRendered...)
 	footer := lipgloss.NewStyle().Foreground(lipgloss.Color("240")).Render("\nTab: switch | ↑↓/jk: scroll | q: back")
-	
+
 	return header + "\n\n" + m.viewport.View() + footer
-}
-
-func welcomeView(width, height int) string {
-	content := "DEATHMATCH\n\nPress any key to continue..."
-
-	style := lipgloss.NewStyle().
-		Width(width).
-		Height(height).
-		Align(lipgloss.Center, lipgloss.Center)
-
-	return style.Render(content)
 }
 
 func gameView(g *game.Game) string {
 	var arena strings.Builder
 
-	for y := 0; y < g.Height; y++ {
-		for x := 0; x < g.Width; x++ {
+	for y := range g.Height {
+		for x := range g.Width {
 			if x == g.Player.X && y == g.Player.Y {
 				arena.WriteString("@")
 			} else {
