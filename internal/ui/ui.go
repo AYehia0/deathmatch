@@ -251,34 +251,44 @@ func (m Model) getHelpContent() string {
 		content = `# HOW TO PLAY
 
 You are trapped in a sealed arena, hunted by robots.
-Your only weapon is **movement**—lure robots into each other, shape the arena 
-with debris and shrubs, and survive as long as possible.
+Your only weapon is **movement**—lure robots into each other, use your tools wisely, 
+and survive as long as possible.
 
 ## Arena Survival
 - Trapped in a walled arena with hostile robots
-- You are unarmed; survival depends on movement and positioning
+- You are unarmed; survival depends on movement, positioning, and strategy
+- Robots move diagonally toward you after each of your moves
 
 ## Robot Collisions & Junk
-- Robots chase you and collide with each other
-- Collisions create **radioactive junk**
+- Robots chase you relentlessly
+- When 2+ robots collide, they create **radioactive junk** (yellow **)
 - Robots hitting junk self-destruct
-- Junk is **deadly to humans**
+- Junk and obstacles are **deadly to humans**
 
-## Shrubs
-- Shrubs block movement but not vision
-- Robots may explode or crush shrubs
-- Useful as temporary shields
-- Running into shrubs causes damage and score loss
+## Obstacles
+- Gray obstacles (##) block movement for both you and robots
+- Use them strategically to funnel robots together
+- Robots cannot pass through obstacles
 
-## Defensive Tools
-- **Teleporter**: limited uses, random safe relocation
-- **EMP**: single use, disables robots for 3 turns
-- Tools reset each level
+## Defensive Tools (Reset each level)
+- **Teleporter (t)**: 5 uses, teleports you to a random safe location (-2 points)
+- **EMP (e)**: 3 uses, disables all robots for 5 turns
+- **Blaster (b)**: 2 uses, destroys all robots in a 3x3 grid
+  - Enter targeting mode, move the grid, press 'b' to fire or 'esc' to cancel
+  - WARNING: You die if you're in the blast zone!
+
+## Scoring System
+- **+10 points** per robot destroyed
+- **Consecutive kill multiplier**: Every 5 kills adds +1x multiplier
+- **+50 points** for completing a level
+- **-2 points** for using teleporter
 
 ## Endless Progression
-- Clear robots to advance
-- Each level adds more enemies
-- High score is the only goal
+- Clear all robots to advance to the next level
+- Each level increases difficulty:
+  - More robots spawn
+- Tools are replenished each level (+5 teleports, +3 EMPs, +1 blaster)
+- High score is the only goal—there is no escape!
 
 > There is no escape, no final level, and no winning—only a score to beat.`
 
@@ -287,46 +297,72 @@ with debris and shrubs, and survive as long as possible.
 
 ## Movement
 Use **arrow keys** or **hjkl** (vim keys) to move:
-- **h** - Move left
-- **j** - Move down
-- **k** - Move up
-- **l** - Move right
+- **↑ / k** - Move up
+- **↓ / j** - Move down
+- **← / h** - Move left
+- **→ / l** - Move right
 
-## Actions
-- **t** - Use teleporter (limited uses)
-- **e** - Use EMP (single use per level)
+## Tools
+- **t** - Use teleporter (5 per level, -2 points)
+- **e** - Use EMP (3 per level, disables robots for 5 turns)
+- **b** - Use blaster (2 per level)
+  - First press: Enter targeting mode
+  - Move with arrow keys/hjkl to position 3x3 grid
+  - Press **b** again to fire
+  - Press **esc** to cancel
+
+## Game Controls
 - **q** - Quit game
+- **r** - Restart (when game over)
 
-## Navigation
+## Help Navigation
 - **Tab** - Switch between help tabs
-- **Arrow keys / j/k** - Scroll help text
-- **q** - Return to welcome screen`
+- **↑↓ / j/k** - Scroll help text
+- **q** - Return to welcome screen
+
+## Legend
+- **@@** - You (green)
+- **RR** - Robot (red)
+- **##** - Obstacle (gray)
+- **\*\*** - Radioactive junk (yellow)
+- **░░** - Blaster target zone (gray)`
 
 	case scoringTab:
 		content = `# SCORING
 
-## Points
-- **Destroy robot**: +10 points
-- **Survive level**: +50 points
-- **Consecutive kills**: bonus multiplier
+## Points Earned
+- **Destroy robot**: +10 points (base)
+- **Complete level**: +50 points
+- **Consecutive kill multiplier**: Every 5 consecutive kills adds +1x multiplier
+  - Example: 5 kills = 1x, 10 kills = 2x, 15 kills = 3x, etc.
+  - Multiplier applies to all robot kills
 
 ## Penalties
-- **Hit shrub**: -5 points
-- **Use teleporter**: -2 points
+- **Use teleporter**: -2 points per use
 
-## Difficulty Multiplier
-- **Easy**: 1x points
-- **Normal**: 1.5x points
-- **Hard**: 2x points
+## How Multiplier Works
+When you destroy robots without dying, your consecutive kill count increases.
+The multiplier makes each kill worth more:
+- First 5 kills: 10 points each (1x multiplier)
+- Next 5 kills: 20 points each (2x multiplier)
+- Next 5 kills: 30 points each (3x multiplier)
+- And so on...
 
-## High Score
-- Your best score is saved
-- Try to beat your personal record
-- Survive as long as possible`
+## Leaderboard
+- Your **best score** per username is saved
+- Top 3 scores shown on welcome screen
+- Format: Name, Level reached, Total score
+- Beat your own record or compete with others!
+
+## Strategy Tips
+- Chain kills together for higher multipliers
+- Use tools wisely—they reset each level
+- Lure robots into obstacles and each other
+- Don't waste the blaster on single robots`
 	}
 
 	r, _ := glamour.NewTermRenderer(
-		glamour.WithAutoStyle(),
+		glamour.WithStandardStyle("dark"),
 		glamour.WithWordWrap(m.width-4),
 	)
 	rendered, _ := r.Render(content)
