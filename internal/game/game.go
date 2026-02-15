@@ -29,14 +29,17 @@ type Difficulty struct {
 }
 
 type Game struct {
-	Width          int
-	Height         int
-	Player         Position
-	Entities       []Entity
-	GameOver       bool
-	Teleports      int
-	EMPs           int
-	EMPTurnsLeft   int
+	Width            int
+	Height           int
+	Player           Position
+	Entities         []Entity
+	GameOver         bool
+	Teleports        int
+	EMPs             int
+	EMPTurnsLeft     int
+	Score            int
+	Level            int
+	ConsecutiveKills int
 }
 
 func New(width, height int, difficulty Difficulty) *Game {
@@ -63,7 +66,39 @@ func New(width, height int, difficulty Difficulty) *Game {
 		Entities:  entities,
 		Teleports: 5,
 		EMPs:      3,
+		Level:     1,
 	}
+}
+
+func (g *Game) NextLevel() {
+	g.Level++
+	playerPos := Position{X: g.Width / 2, Y: g.Height / 2}
+	occupied := []Position{playerPos}
+
+	entities := []Entity{}
+
+	robotCount := 10 + (g.Level-1)*2
+	obstacleCount := 15 + (g.Level-1)*3
+	minSpawnDist := max(3, 5-(g.Level-1)/2)
+
+	robots := generatePositions(g.Width, g.Height, robotCount, minSpawnDist, occupied)
+	for _, pos := range robots {
+		entities = append(entities, Entity{Pos: pos, Type: EntityRobot})
+	}
+	occupied = append(occupied, robots...)
+
+	obstacles := generatePositions(g.Width, g.Height, obstacleCount, 0, occupied)
+	for _, pos := range obstacles {
+		entities = append(entities, Entity{Pos: pos, Type: EntityObstacle})
+	}
+
+	g.Player = playerPos
+	g.Entities = entities
+	g.EMPTurnsLeft = 0
+	g.Teleports += 5
+	g.EMPs += 3
+	g.Score += 50
+	g.ConsecutiveKills = 0
 }
 
 func generatePositions(width, height, count, minDist int, occupied []Position) []Position {
@@ -164,12 +199,27 @@ func (g *Game) MoveRobots() {
 			Y: g.Entities[i].Pos.Y + dy,
 		}
 
+		if newPos.X < 0 || newPos.X >= g.Width || newPos.Y < 0 || newPos.Y >= g.Height {
+			continue
+		}
+
+		hitObstacle := false
 		hitJunk := false
 		for _, entity := range g.Entities {
-			if entity.Type == EntityJunk && entity.Pos == newPos {
-				hitJunk = true
-				break
+			if entity.Pos == newPos {
+				if entity.Type == EntityObstacle {
+					hitObstacle = true
+					break
+				}
+				if entity.Type == EntityJunk {
+					hitJunk = true
+					break
+				}
 			}
+		}
+
+		if hitObstacle {
+			continue
 		}
 
 		if hitJunk {
@@ -186,7 +236,7 @@ func (g *Game) CheckCollisions() {
 	for i, entity := range g.Entities {
 		if entity.Type == EntityRobot {
 			posMap[entity.Pos] = append(posMap[entity.Pos], i)
-			
+
 			if entity.Pos == g.Player {
 				g.GameOver = true
 				return
@@ -203,6 +253,11 @@ func (g *Game) CheckCollisions() {
 				toRemove[idx] = true
 			}
 			junkPositions = append(junkPositions, pos)
+
+			killCount := len(indices)
+			g.ConsecutiveKills += killCount
+			multiplier := 1 + g.ConsecutiveKills/5
+			g.Score += 10 * killCount * multiplier
 		}
 	}
 
@@ -218,6 +273,17 @@ func (g *Game) CheckCollisions() {
 	}
 
 	g.Entities = newEntities
+
+	robotCount := 0
+	for _, entity := range g.Entities {
+		if entity.Type == EntityRobot {
+			robotCount++
+		}
+	}
+
+	if robotCount == 0 {
+		g.NextLevel()
+	}
 }
 
 func (g *Game) Teleport() bool {
@@ -231,7 +297,7 @@ func (g *Game) Teleport() bool {
 	}
 
 	maxAttempts := 100
-	for i := 0; i < maxAttempts; i++ {
+	for range maxAttempts {
 		newPos := Position{
 			X: rand.IntN(g.Width),
 			Y: rand.IntN(g.Height),
@@ -240,6 +306,7 @@ func (g *Game) Teleport() bool {
 		if !occupiedMap[newPos] {
 			g.Player = newPos
 			g.Teleports--
+			g.Score -= 2
 			return true
 		}
 	}

@@ -39,6 +39,8 @@ type Model struct {
 	gameOverScreen *AnimatedScreen
 	viewport       viewport.Model
 	activeTab      helpTab
+	finalScore     int
+	finalLevel     int
 }
 
 func NewModel() Model {
@@ -84,12 +86,14 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		if m.state == gameState && m.game != nil && m.game.GameOver {
 			m.state = gameOverState
+			m.finalScore = m.game.Score
+			m.finalLevel = m.game.Level
 			colors := []lipgloss.Color{"9", "196", "160", "124"}
 			m.gameOverScreen = NewAnimatedScreen(
 				m.width,
 				m.height,
 				"GAME OVER",
-				"",
+				"Level: "+formatInt(m.finalLevel)+"  Score: "+formatInt(m.finalScore),
 				"[r] Restart  [q] Quit",
 				colors,
 			)
@@ -342,16 +346,33 @@ func gameView(g *game.Game) string {
 	if g.EMPTurnsLeft > 0 {
 		empStatus = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("11")).
-			Render(" (ACTIVE: " + string(rune('0'+g.EMPTurnsLeft)) + " turns)")
+			Render(" (ACTIVE: " + formatInt(g.EMPTurnsLeft) + " turns)")
 	}
 
 	status := statusStyle.Render(
-		"[t] Teleports: " + string(rune('0'+g.Teleports)) +
-			"  [e] EMPs: " + string(rune('0'+g.EMPs)) + empStatus +
+		"Level: " + formatInt(g.Level) +
+			"  Score: " + formatInt(g.Score) +
+			"  [t] Teleports: " + formatInt(g.Teleports) +
+			"  [e] EMPs: " + formatInt(g.EMPs) + empStatus +
 			"  [q] Quit",
 	)
 
 	return boxStyle.Render(arena.String()) + "\n" + status
+}
+
+func formatInt(n int) string {
+	if n < 0 {
+		return "0"
+	}
+	if n < 10 {
+		return string(rune('0' + n))
+	}
+	result := ""
+	for n > 0 {
+		result = string(rune('0'+(n%10))) + result
+		n /= 10
+	}
+	return result
 }
 
 func renderEntity(e game.Entity) string {
