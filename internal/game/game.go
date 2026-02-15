@@ -40,6 +40,9 @@ type Game struct {
 	Score            int
 	Level            int
 	ConsecutiveKills int
+	Blasters         int
+	BlasterActive    bool
+	BlasterTarget    Position
 }
 
 func New(width, height int, difficulty Difficulty) *Game {
@@ -66,6 +69,7 @@ func New(width, height int, difficulty Difficulty) *Game {
 		Entities:  entities,
 		Teleports: 5,
 		EMPs:      3,
+		Blasters:  2,
 		Level:     1,
 	}
 }
@@ -95,8 +99,10 @@ func (g *Game) NextLevel() {
 	g.Player = playerPos
 	g.Entities = entities
 	g.EMPTurnsLeft = 0
+	g.BlasterActive = false
 	g.Teleports += 5
 	g.EMPs += 3
+	g.Blasters += 1
 	g.Score += 50
 	g.ConsecutiveKills = 0
 }
@@ -322,4 +328,78 @@ func (g *Game) UseEMP() bool {
 	g.EMPs--
 	g.EMPTurnsLeft = 5
 	return true
+}
+
+func (g *Game) ToggleBlaster() bool {
+	if g.GameOver {
+		return false
+	}
+
+	if !g.BlasterActive {
+		if g.Blasters <= 0 {
+			return false
+		}
+		g.BlasterActive = true
+		g.BlasterTarget = g.Player
+		return true
+	}
+
+	g.BlasterActive = false
+	g.Blasters--
+
+	killCount := 0
+	newEntities := []Entity{}
+
+	for _, entity := range g.Entities {
+		inBlastZone := entity.Pos.X >= g.BlasterTarget.X-1 && entity.Pos.X <= g.BlasterTarget.X+1 &&
+			entity.Pos.Y >= g.BlasterTarget.Y-1 && entity.Pos.Y <= g.BlasterTarget.Y+1
+
+		if entity.Type == EntityRobot && inBlastZone {
+			killCount++
+		} else {
+			newEntities = append(newEntities, entity)
+		}
+	}
+
+	g.Entities = newEntities
+
+	if killCount > 0 {
+		g.ConsecutiveKills += killCount
+		multiplier := 1 + g.ConsecutiveKills/5
+		g.Score += 10 * killCount * multiplier
+	}
+
+	playerInBlastZone := g.Player.X >= g.BlasterTarget.X-1 && g.Player.X <= g.BlasterTarget.X+1 &&
+		g.Player.Y >= g.BlasterTarget.Y-1 && g.Player.Y <= g.BlasterTarget.Y+1
+
+	if playerInBlastZone {
+		g.GameOver = true
+	}
+
+	robotCount := 0
+	for _, entity := range g.Entities {
+		if entity.Type == EntityRobot {
+			robotCount++
+		}
+	}
+
+	if robotCount == 0 && !g.GameOver {
+		g.NextLevel()
+	}
+
+	return true
+}
+
+func (g *Game) MoveBlasterTarget(dx, dy int) {
+	if !g.BlasterActive {
+		return
+	}
+
+	newX := g.BlasterTarget.X + dx
+	newY := g.BlasterTarget.Y + dy
+
+	if newX >= 1 && newX < g.Width-1 && newY >= 1 && newY < g.Height-1 {
+		g.BlasterTarget.X = newX
+		g.BlasterTarget.Y = newY
+	}
 }

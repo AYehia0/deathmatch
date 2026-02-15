@@ -144,18 +144,44 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			switch msg.String() {
 			case "q", "ctrl+c":
 				return m, tea.Quit
+			case "esc":
+				if m.game.BlasterActive {
+					m.game.BlasterActive = false
+				}
 			case "t":
-				m.game.Teleport()
+				if !m.game.BlasterActive {
+					m.game.Teleport()
+				}
 			case "e":
-				m.game.UseEMP()
+				if !m.game.BlasterActive {
+					m.game.UseEMP()
+				}
+			case "b":
+				m.game.ToggleBlaster()
 			case "up", "k":
-				m.game.MovePlayer(0, -1)
+				if m.game.BlasterActive {
+					m.game.MoveBlasterTarget(0, -1)
+				} else {
+					m.game.MovePlayer(0, -1)
+				}
 			case "down", "j":
-				m.game.MovePlayer(0, 1)
+				if m.game.BlasterActive {
+					m.game.MoveBlasterTarget(0, 1)
+				} else {
+					m.game.MovePlayer(0, 1)
+				}
 			case "left", "h":
-				m.game.MovePlayer(-1, 0)
+				if m.game.BlasterActive {
+					m.game.MoveBlasterTarget(-1, 0)
+				} else {
+					m.game.MovePlayer(-1, 0)
+				}
 			case "right", "l":
-				m.game.MovePlayer(1, 0)
+				if m.game.BlasterActive {
+					m.game.MoveBlasterTarget(1, 0)
+				} else {
+					m.game.MovePlayer(1, 0)
+				}
 			}
 		}
 
@@ -164,7 +190,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case "q", "ctrl+c":
 				return m, tea.Quit
 			case "r":
-				m.game = game.New(m.width-4, m.height-4, game.Difficulty{
+				m.game = game.New(m.width-4, m.height-5, game.Difficulty{
 					RobotCount:    10,
 					ObstacleCount: 15,
 					MinSpawnDist:  5,
@@ -306,10 +332,24 @@ func (m Model) renderHelp() string {
 
 func gameView(g *game.Game) string {
 	grid := make([][]string, g.Height)
+	blasterGrid := make([][]bool, g.Height)
 	for i := range grid {
 		grid[i] = make([]string, g.Width)
+		blasterGrid[i] = make([]bool, g.Width)
 		for j := range grid[i] {
 			grid[i][j] = " "
+		}
+	}
+
+	if g.BlasterActive {
+		for dy := -1; dy <= 1; dy++ {
+			for dx := -1; dx <= 1; dx++ {
+				y := g.BlasterTarget.Y + dy
+				x := g.BlasterTarget.X + dx
+				if y >= 0 && y < g.Height && x >= 0 && x < g.Width {
+					blasterGrid[y][x] = true
+				}
+			}
 		}
 	}
 
@@ -325,8 +365,16 @@ func gameView(g *game.Game) string {
 
 	var arena strings.Builder
 	for y, row := range grid {
-		for _, cell := range row {
-			arena.WriteString(cell)
+		for x, cell := range row {
+			if blasterGrid[y][x] {
+				if cell == " " {
+					arena.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("240")).Render("░"))
+				} else {
+					arena.WriteString(lipgloss.NewStyle().Background(lipgloss.Color("240")).Render(cell))
+				}
+			} else {
+				arena.WriteString(cell)
+			}
 		}
 		if y < g.Height-1 {
 			arena.WriteString("\n")
@@ -349,11 +397,19 @@ func gameView(g *game.Game) string {
 			Render(" (ACTIVE: " + formatInt(g.EMPTurnsLeft) + " turns)")
 	}
 
+	blasterStatus := ""
+	if g.BlasterActive {
+		blasterStatus = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("11")).
+			Render(" [TARGETING MODE - Press 'b' to fire, 'esc' to cancel]")
+	}
+
 	status := statusStyle.Render(
 		"Level: " + formatInt(g.Level) +
 			"  Score: " + formatInt(g.Score) +
 			"  [t] Teleports: " + formatInt(g.Teleports) +
 			"  [e] EMPs: " + formatInt(g.EMPs) + empStatus +
+			"  [b] Blasters: " + formatInt(g.Blasters) + blasterStatus +
 			"  [q] Quit",
 	)
 
