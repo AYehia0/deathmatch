@@ -11,6 +11,11 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
+const (
+	minWidth  = 80
+	minHeight = 24
+)
+
 type tickMsg time.Time
 
 type state int
@@ -77,15 +82,16 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
+		
+		// Always recreate welcome screen on resize to keep it centered
+		m.welcomeScreen = NewWelcomeScreen(msg.Width, msg.Height)
+		
 		if m.game == nil {
 			m.game = game.New((msg.Width-4)/2, msg.Height-5, game.Difficulty{
 				RobotCount:    10,
 				ObstacleCount: 15,
 				MinSpawnDist:  5,
 			})
-		}
-		if m.welcomeScreen == nil {
-			m.welcomeScreen = NewWelcomeScreen(msg.Width, msg.Height)
 		}
 		m.viewport = viewport.New(msg.Width, msg.Height-4)
 		m.viewport.SetContent(m.getHelpContent())
@@ -141,6 +147,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.viewport.SetContent(m.getHelpContent())
 				return m, nil
 			default:
+				// Recreate game with current window size when starting
+				m.game = game.New((m.width-4)/2, m.height-5, game.Difficulty{
+					RobotCount:    10,
+					ObstacleCount: 15,
+					MinSpawnDist:  5,
+				})
 				m.state = gameState
 				return m, nil
 			}
@@ -226,6 +238,14 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) View() string {
+	if m.width < minWidth || m.height < minHeight {
+		msg := lipgloss.NewStyle().
+			Foreground(lipgloss.Color("9")).
+			Bold(true).
+			Render("Terminal too small!\n\nMinimum size: " + formatInt(minWidth) + "x" + formatInt(minHeight) + "\nCurrent: " + formatInt(m.width) + "x" + formatInt(m.height))
+		return lipgloss.Place(m.width, m.height, lipgloss.Center, lipgloss.Center, msg)
+	}
+	
 	if m.state == welcomeState {
 		if m.welcomeScreen != nil {
 			return m.welcomeScreen.Render()
