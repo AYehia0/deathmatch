@@ -42,11 +42,23 @@ type Model struct {
 	finalScore     int
 	finalLevel     int
 	selfDestruct   bool
+	playerName     string
 }
 
 func NewModel() Model {
 	return Model{
-		state: welcomeState,
+		state:      welcomeState,
+		playerName: "Player",
+	}
+}
+
+func NewModelWithName(name string) Model {
+	if name == "" {
+		name = "Player"
+	}
+	return Model{
+		state:      welcomeState,
+		playerName: name,
 	}
 }
 
@@ -90,6 +102,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.finalScore = m.game.Score
 			m.finalLevel = m.game.Level
 			m.selfDestruct = m.game.SelfDestruct
+
+			game.SaveScore(m.playerName, m.finalLevel, m.finalScore)
 
 			message := ""
 			if m.selfDestruct {

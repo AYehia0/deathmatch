@@ -9,6 +9,10 @@ import (
 
 func TeaHandler() bubbletea.Handler {
 	return func(s ssh.Session) (tea.Model, []tea.ProgramOption) {
-		return ui.NewModel(), []tea.ProgramOption{tea.WithAltScreen()}
+		username := s.User()
+		if username == "" {
+			username = "Player"
+		}
+		return ui.NewModelWithName(username), []tea.ProgramOption{tea.WithAltScreen()}
 	}
 }
