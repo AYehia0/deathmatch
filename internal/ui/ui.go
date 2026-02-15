@@ -90,12 +90,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.finalScore = m.game.Score
 			m.finalLevel = m.game.Level
 			m.selfDestruct = m.game.SelfDestruct
-			
+
 			message := ""
 			if m.selfDestruct {
-				message = "You killed yourself idiot!"
+				message = "You are your own worst enemy!"
 			}
-			
+
 			colors := []lipgloss.Color{"9", "196", "160", "124"}
 			m.gameOverScreen = NewAnimatedScreen(
 				m.width,
