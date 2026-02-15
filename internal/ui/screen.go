@@ -28,7 +28,7 @@ func NewAnimatedScreen(width, height int, title, message, subtitle, prompt strin
 	screen := &AnimatedScreen{
 		width:      width,
 		height:     height,
-		particles:  make([]Particle, 30),
+		particles:  make([]Particle, 15),
 		title:      title,
 		message:    message,
 		subtitle:   subtitle,
