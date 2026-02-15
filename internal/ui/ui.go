@@ -19,6 +19,7 @@ const (
 	welcomeState state = iota
 	helpState
 	gameState
+	gameOverState
 )
 
 type helpTab int
@@ -30,13 +31,14 @@ const (
 )
 
 type Model struct {
-	game          *game.Game
-	state         state
-	width         int
-	height        int
-	welcomeScreen *WelcomeScreen
-	viewport      viewport.Model
-	activeTab     helpTab
+	game           *game.Game
+	state          state
+	width          int
+	height         int
+	welcomeScreen  *WelcomeScreen
+	gameOverScreen *AnimatedScreen
+	viewport       viewport.Model
+	activeTab      helpTab
 }
 
 func NewModel() Model {
@@ -61,7 +63,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.width = msg.Width
 		m.height = msg.Height
 		if m.game == nil {
-			m.game = game.New(msg.Width-4, msg.Height-2)
+			m.game = game.New(msg.Width-4, msg.Height-5, game.Difficulty{
+				RobotCount:    10,
+				ObstacleCount: 15,
+				MinSpawnDist:  5,
+			})
 		}
 		if m.welcomeScreen == nil {
 			m.welcomeScreen = NewWelcomeScreen(msg.Width, msg.Height)
@@ -72,6 +78,21 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tickMsg:
 		if m.state == welcomeState && m.welcomeScreen != nil {
 			m.welcomeScreen.Update()
+		}
+		if m.state == gameOverState && m.gameOverScreen != nil {
+			m.gameOverScreen.Update()
+		}
+		if m.state == gameState && m.game != nil && m.game.GameOver {
+			m.state = gameOverState
+			colors := []lipgloss.Color{"9", "196", "160", "124"}
+			m.gameOverScreen = NewAnimatedScreen(
+				m.width,
+				m.height,
+				"GAME OVER",
+				"",
+				"[r] Restart  [q] Quit",
+				colors,
+			)
 		}
 		return m, tick()
 	case tea.KeyMsg:
@@ -119,6 +140,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			switch msg.String() {
 			case "q", "ctrl+c":
 				return m, tea.Quit
+			case "t":
+				m.game.Teleport()
+			case "e":
+				m.game.UseEMP()
 			case "up", "k":
 				m.game.MovePlayer(0, -1)
 			case "down", "j":
@@ -127,6 +152,20 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.game.MovePlayer(-1, 0)
 			case "right", "l":
 				m.game.MovePlayer(1, 0)
+			}
+		}
+
+		if m.state == gameOverState {
+			switch msg.String() {
+			case "q", "ctrl+c":
+				return m, tea.Quit
+			case "r":
+				m.game = game.New(m.width-4, m.height-4, game.Difficulty{
+					RobotCount:    10,
+					ObstacleCount: 15,
+					MinSpawnDist:  5,
+				})
+				m.state = gameState
 			}
 		}
 	}
@@ -142,6 +181,12 @@ func (m Model) View() string {
 	}
 	if m.state == helpState {
 		return m.renderHelp()
+	}
+	if m.state == gameOverState {
+		if m.gameOverScreen != nil {
+			return m.gameOverScreen.Render()
+		}
+		return ""
 	}
 	return gameView(m.game)
 }
@@ -256,15 +301,28 @@ func (m Model) renderHelp() string {
 }
 
 func gameView(g *game.Game) string {
-	var arena strings.Builder
+	grid := make([][]string, g.Height)
+	for i := range grid {
+		grid[i] = make([]string, g.Width)
+		for j := range grid[i] {
+			grid[i][j] = " "
+		}
+	}
 
-	for y := range g.Height {
-		for x := range g.Width {
-			if x == g.Player.X && y == g.Player.Y {
-				arena.WriteString("@")
-			} else {
-				arena.WriteString(" ")
-			}
+	for _, entity := range g.Entities {
+		if entity.Pos.Y >= 0 && entity.Pos.Y < g.Height && entity.Pos.X >= 0 && entity.Pos.X < g.Width {
+			grid[entity.Pos.Y][entity.Pos.X] = renderEntity(entity)
+		}
+	}
+
+	if g.Player.Y >= 0 && g.Player.Y < g.Height && g.Player.X >= 0 && g.Player.X < g.Width {
+		grid[g.Player.Y][g.Player.X] = lipgloss.NewStyle().Foreground(lipgloss.Color("10")).Render("@")
+	}
+
+	var arena strings.Builder
+	for y, row := range grid {
+		for _, cell := range row {
+			arena.WriteString(cell)
 		}
 		if y < g.Height-1 {
 			arena.WriteString("\n")
@@ -276,5 +334,37 @@ func gameView(g *game.Game) string {
 		BorderForeground(lipgloss.Color("240")).
 		Padding(0, 1)
 
-	return boxStyle.Render(arena.String())
+	statusStyle := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("240")).
+		Padding(0, 1)
+
+	empStatus := ""
+	if g.EMPTurnsLeft > 0 {
+		empStatus = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("11")).
+			Render(" (ACTIVE: " + string(rune('0'+g.EMPTurnsLeft)) + " turns)")
+	}
+
+	status := statusStyle.Render(
+		"[t] Teleports: " + string(rune('0'+g.Teleports)) +
+			"  [e] EMPs: " + string(rune('0'+g.EMPs)) + empStatus +
+			"  [q] Quit",
+	)
+
+	return boxStyle.Render(arena.String()) + "\n" + status
+}
+
+func renderEntity(e game.Entity) string {
+	switch e.Type {
+	case game.EntityRobot:
+		return lipgloss.NewStyle().Foreground(lipgloss.Color("9")).Render("R")
+	case game.EntityObstacle:
+		return lipgloss.NewStyle().Foreground(lipgloss.Color("8")).Render("#")
+	case game.EntityJunk:
+		return lipgloss.NewStyle().Foreground(lipgloss.Color("11")).Render("*")
+	case game.EntityShrub:
+		return lipgloss.NewStyle().Foreground(lipgloss.Color("2")).Render("&")
+	default:
+		return " "
+	}
 }
