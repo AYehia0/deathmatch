@@ -5,6 +5,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/ssh"
 	"github.com/charmbracelet/wish/bubbletea"
+	"github.com/muesli/termenv"
 )
 
 func TeaHandler() bubbletea.Handler {
@@ -13,6 +14,12 @@ func TeaHandler() bubbletea.Handler {
 		if username == "" {
 			username = "Player"
 		}
-		return ui.NewModelWithName(username), []tea.ProgramOption{tea.WithAltScreen()}
+		
+		renderer := bubbletea.MakeRenderer(s)
+		renderer.SetColorProfile(termenv.TrueColor)
+		
+		return ui.NewModelWithName(username), []tea.ProgramOption{
+			tea.WithAltScreen(),
+		}
 	}
 }

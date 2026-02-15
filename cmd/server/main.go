@@ -13,6 +13,7 @@ import (
 	"github.com/charmbracelet/wish"
 	"github.com/charmbracelet/wish/bubbletea"
 	"github.com/charmbracelet/wish/logging"
+	"github.com/muesli/termenv"
 )
 
 const (
@@ -28,7 +29,7 @@ func main() {
 			return true // Allow all connections
 		}),
 		wish.WithMiddleware(
-			bubbletea.Middleware(sshhandler.TeaHandler()),
+			bubbletea.MiddlewareWithColorProfile(sshhandler.TeaHandler(), termenv.TrueColor),
 			logging.Middleware(),
 		),
 	)
