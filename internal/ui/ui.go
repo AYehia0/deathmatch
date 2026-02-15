@@ -65,7 +65,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.width = msg.Width
 		m.height = msg.Height
 		if m.game == nil {
-			m.game = game.New(msg.Width-4, msg.Height-5, game.Difficulty{
+			m.game = game.New((msg.Width-4)/2, msg.Height-5, game.Difficulty{
 				RobotCount:    10,
 				ObstacleCount: 15,
 				MinSpawnDist:  5,
@@ -190,7 +190,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case "q", "ctrl+c":
 				return m, tea.Quit
 			case "r":
-				m.game = game.New(m.width-4, m.height-5, game.Difficulty{
+				m.game = game.New((m.width-4)/2, m.height-5, game.Difficulty{
 					RobotCount:    10,
 					ObstacleCount: 15,
 					MinSpawnDist:  5,
@@ -337,7 +337,7 @@ func gameView(g *game.Game) string {
 		grid[i] = make([]string, g.Width)
 		blasterGrid[i] = make([]bool, g.Width)
 		for j := range grid[i] {
-			grid[i][j] = " "
+			grid[i][j] = "  "
 		}
 	}
 
@@ -360,15 +360,15 @@ func gameView(g *game.Game) string {
 	}
 
 	if g.Player.Y >= 0 && g.Player.Y < g.Height && g.Player.X >= 0 && g.Player.X < g.Width {
-		grid[g.Player.Y][g.Player.X] = lipgloss.NewStyle().Foreground(lipgloss.Color("10")).Render("@")
+		grid[g.Player.Y][g.Player.X] = lipgloss.NewStyle().Foreground(lipgloss.Color("10")).Render("@@")
 	}
 
 	var arena strings.Builder
 	for y, row := range grid {
 		for x, cell := range row {
 			if blasterGrid[y][x] {
-				if cell == " " {
-					arena.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("240")).Render("░"))
+				if cell == "  " {
+					arena.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("240")).Render("░░"))
 				} else {
 					arena.WriteString(lipgloss.NewStyle().Background(lipgloss.Color("240")).Render(cell))
 				}
@@ -434,14 +434,14 @@ func formatInt(n int) string {
 func renderEntity(e game.Entity) string {
 	switch e.Type {
 	case game.EntityRobot:
-		return lipgloss.NewStyle().Foreground(lipgloss.Color("9")).Render("R")
+		return lipgloss.NewStyle().Foreground(lipgloss.Color("9")).Render("RR")
 	case game.EntityObstacle:
-		return lipgloss.NewStyle().Foreground(lipgloss.Color("8")).Render("#")
+		return lipgloss.NewStyle().Foreground(lipgloss.Color("8")).Render("##")
 	case game.EntityJunk:
-		return lipgloss.NewStyle().Foreground(lipgloss.Color("11")).Render("*")
+		return lipgloss.NewStyle().Foreground(lipgloss.Color("11")).Render("**")
 	case game.EntityShrub:
-		return lipgloss.NewStyle().Foreground(lipgloss.Color("2")).Render("&")
+		return lipgloss.NewStyle().Foreground(lipgloss.Color("2")).Render("&&")
 	default:
-		return " "
+		return "  "
 	}
 }
