@@ -13,22 +13,24 @@ type Particle struct {
 }
 
 type AnimatedScreen struct {
-	width     int
-	height    int
-	particles []Particle
-	frame     int
-	title     string
-	subtitle  string
-	prompt    string
+	width      int
+	height     int
+	particles  []Particle
+	frame      int
+	title      string
+	message    string
+	subtitle   string
+	prompt     string
 	titleColor []lipgloss.Color
 }
 
-func NewAnimatedScreen(width, height int, title, subtitle, prompt string, titleColor []lipgloss.Color) *AnimatedScreen {
+func NewAnimatedScreen(width, height int, title, message, subtitle, prompt string, titleColor []lipgloss.Color) *AnimatedScreen {
 	screen := &AnimatedScreen{
 		width:      width,
 		height:     height,
 		particles:  make([]Particle, 30),
 		title:      title,
+		message:    message,
 		subtitle:   subtitle,
 		prompt:     prompt,
 		titleColor: titleColor,
@@ -101,8 +103,28 @@ func (s *AnimatedScreen) Render() string {
 		}
 	}
 
+	if s.message != "" {
+		messageY := titleY + 2
+		messageX := (s.width - len(s.message)) / 2
+		if messageY >= 0 && messageY < s.height && messageX >= 0 {
+			messageStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("11")).Bold(true)
+			for j, ch := range s.message {
+				x := messageX + j
+				if x >= 0 && x < s.width {
+					grid[messageY][x] = ch
+					styles[messageY][x] = messageStyle
+				}
+			}
+		}
+	}
+
+	subtitleOffset := 2
+	if s.message != "" {
+		subtitleOffset = 4
+	}
+
 	if s.subtitle != "" {
-		subtitleY := titleY + 2
+		subtitleY := titleY + subtitleOffset
 		subtitleX := (s.width - len(s.subtitle)) / 2
 		if subtitleY >= 0 && subtitleY < s.height && subtitleX >= 0 {
 			subtitleStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
@@ -117,7 +139,11 @@ func (s *AnimatedScreen) Render() string {
 	}
 
 	if s.prompt != "" {
-		promptY := titleY + 4
+		promptOffset := 4
+		if s.message != "" {
+			promptOffset = 6
+		}
+		promptY := titleY + promptOffset
 		promptX := (s.width - len(s.prompt)) / 2
 		if promptY >= 0 && promptY < s.height && promptX >= 0 {
 			blinkStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("255"))

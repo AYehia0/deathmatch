@@ -43,6 +43,7 @@ type Game struct {
 	Blasters         int
 	BlasterActive    bool
 	BlasterTarget    Position
+	SelfDestruct     bool
 }
 
 func New(width, height int, difficulty Difficulty) *Game {
@@ -374,6 +375,8 @@ func (g *Game) ToggleBlaster() bool {
 
 	if playerInBlastZone {
 		g.GameOver = true
+		g.SelfDestruct = true
+		return true
 	}
 
 	robotCount := 0

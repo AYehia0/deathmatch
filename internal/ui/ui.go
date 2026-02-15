@@ -41,6 +41,7 @@ type Model struct {
 	activeTab      helpTab
 	finalScore     int
 	finalLevel     int
+	selfDestruct   bool
 }
 
 func NewModel() Model {
@@ -88,11 +89,19 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.state = gameOverState
 			m.finalScore = m.game.Score
 			m.finalLevel = m.game.Level
+			m.selfDestruct = m.game.SelfDestruct
+			
+			message := ""
+			if m.selfDestruct {
+				message = "You killed yourself idiot!"
+			}
+			
 			colors := []lipgloss.Color{"9", "196", "160", "124"}
 			m.gameOverScreen = NewAnimatedScreen(
 				m.width,
 				m.height,
 				"GAME OVER",
+				message,
 				"Level: "+formatInt(m.finalLevel)+"  Score: "+formatInt(m.finalScore),
 				"[r] Restart  [q] Quit",
 				colors,
