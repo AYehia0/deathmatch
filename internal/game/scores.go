@@ -18,7 +18,21 @@ const scoresFile = "scores.txt"
 
 func SaveScore(name string, level, score int) error {
 	scores, _ := LoadScores()
-	scores = append(scores, ScoreEntry{Name: name, Level: level, Score: score})
+	
+	found := false
+	for i, s := range scores {
+		if s.Name == name {
+			found = true
+			if score > s.Score {
+				scores[i] = ScoreEntry{Name: name, Level: level, Score: score}
+			}
+			break
+		}
+	}
+	
+	if !found {
+		scores = append(scores, ScoreEntry{Name: name, Level: level, Score: score})
+	}
 
 	sort.Slice(scores, func(i, j int) bool {
 		return scores[i].Score > scores[j].Score
