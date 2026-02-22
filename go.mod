@@ -1,4 +1,4 @@
-module github.com/ahmedyahia/deathmatch
+module github.com/ayehia0/deathmatch
 
 go 1.24.2
 

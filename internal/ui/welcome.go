@@ -1,7 +1,7 @@
 package ui
 
 import (
-	"github.com/ahmedyahia/deathmatch/internal/game"
+	"github.com/ayehia0/deathmatch/internal/game"
 	"github.com/charmbracelet/lipgloss"
 )
 
@@ -12,7 +12,7 @@ type WelcomeScreen struct {
 
 func NewWelcomeScreen(width, height int) *WelcomeScreen {
 	topScores := game.GetTopScores(3)
-	
+
 	subtitle := ""
 	if len(topScores) > 0 {
 		subtitle = "TOP SCORES: "
@@ -23,7 +23,7 @@ func NewWelcomeScreen(width, height int) *WelcomeScreen {
 			subtitle += formatInt(i+1) + ". " + s.Name + " Lvl" + formatInt(s.Level) + " " + formatInt(s.Score) + "pts"
 		}
 	}
-	
+
 	colors := []lipgloss.Color{"196", "202", "208", "214", "220", "226"}
 	return &WelcomeScreen{
 		AnimatedScreen: NewAnimatedScreen(

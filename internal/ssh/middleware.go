@@ -1,7 +1,7 @@
 package ssh
 
 import (
-	"github.com/ahmedyahia/deathmatch/internal/ui"
+	"github.com/ayehia0/deathmatch/internal/ui"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/ssh"
 	"github.com/charmbracelet/wish/bubbletea"
@@ -14,10 +14,10 @@ func TeaHandler() bubbletea.Handler {
 		if username == "" {
 			username = "Player"
 		}
-		
+
 		renderer := bubbletea.MakeRenderer(s)
 		renderer.SetColorProfile(termenv.TrueColor)
-		
+
 		return ui.NewModelWithName(username), []tea.ProgramOption{
 			tea.WithAltScreen(),
 		}

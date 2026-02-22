@@ -8,7 +8,7 @@ import (
 	"syscall"
 	"time"
 
-	sshhandler "github.com/ahmedyahia/deathmatch/internal/ssh"
+	sshhandler "github.com/ayehia0/deathmatch/internal/ssh"
 	"github.com/charmbracelet/ssh"
 	"github.com/charmbracelet/wish"
 	"github.com/charmbracelet/wish/bubbletea"

@@ -4,7 +4,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ahmedyahia/deathmatch/internal/game"
+	"github.com/ayehia0/deathmatch/internal/game"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/glamour"
@@ -82,10 +82,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
-		
+
 		// Always recreate welcome screen on resize to keep it centered
 		m.welcomeScreen = NewWelcomeScreen(msg.Width, msg.Height)
-		
+
 		if m.game == nil {
 			m.game = game.New((msg.Width-4)/2, msg.Height-5, game.Difficulty{
 				RobotCount:    10,
@@ -245,7 +245,7 @@ func (m Model) View() string {
 			Render("Terminal too small!\n\nMinimum size: " + formatInt(minWidth) + "x" + formatInt(minHeight) + "\nCurrent: " + formatInt(m.width) + "x" + formatInt(m.height))
 		return lipgloss.Place(m.width, m.height, lipgloss.Center, lipgloss.Center, msg)
 	}
-	
+
 	if m.state == welcomeState {
 		if m.welcomeScreen != nil {
 			return m.welcomeScreen.Render()
